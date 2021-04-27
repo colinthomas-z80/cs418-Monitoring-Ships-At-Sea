@@ -6,7 +6,7 @@ import time
 import sys, re
 from mysqlutils import SQL_runner
 
-f = open('schema.sql')
+f = open('scripts/schema.sql')
 script = f.read()
 f.close()
 
