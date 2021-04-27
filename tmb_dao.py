@@ -20,10 +20,12 @@ class tmb_dao:
             latitude  = msg["Position"]["coordinates"][1]
 
             id = random.randint(1, 16777214)
-            ais_query = "INSERT INTO TABLE AIS_MESSAGE VALUES ({0}, {1}, {2}, {3}, {4})".format(
+            ais_query = "INSERT INTO AISDraft.AIS_MESSAGE VALUES ({0}, STR_TO_DATE('{1}','%Y-%m-%dT%H:%i:%s.000Z'), {2}, '{3}', {4});".format(
                     id, timestamp, mmsi, msgclass, "NULL")
-            pos_quert = "INSERT INTO TABLE POSITION_REPORT VALUES({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}".format(
-                    id, status, longitude, latitude, rot, sog, cog, heading, NULL, 1, NULL, NULL)
+            pos_query = "INSERT INTO TABLE POSITION_REPORT VALUES({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11});".format( 
+                    id, status, longitude, latitude, rot, sog, cog, heading, "NULL", 1, "NULL", "NULL") 
+
+            print(SQL_runner().run(ais_query))
             
             
 
@@ -50,3 +52,5 @@ def static_extract(data):
 dao = tmb_dao()
 
 dao.insert_msg(ex)
+
+print(SQL_runner().run("SELECT * FROM AISDraft.AIS_MESSAGE;"))

@@ -31,6 +31,7 @@ class MySQLConnectionManager:
 
 	def __exit__(self, *ignore):
 		#print("Closing connexion")
+		self.cnx.commit()
 		self.cnx.close()
 
 class MySQLCursorManager:
@@ -81,7 +82,6 @@ class SQL_runner():
 							rs = cursor.fetchall()
 						else:
 							rs = [(cursor.rowcount,)]
-							
 		except mysql.connector.Error as err:
 			if  err.errno == errorcode.ER_ACCESS_DENIED_ERROR:
 				print("Something is wrong with your user name or password")
