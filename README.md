@@ -2,20 +2,15 @@
 
 Option A
 
-# Creating the script file
+# Creating the database
 
-Replace non-escaped quotes in the VESSELS.CSV file with 
+Copy the files from csv_data into your mysql data directory.
+<br><br>
+You can see what directory that is in the mysql shell with:
 
-    sed s/\'/''/g new.sql > new2.sql
+    SELECT @@GLOBAL.secure_file_priv;
 
-Insert parentheses and commas for proper sql INSERT format with
+<br><br>
 
-    awk '{print "("$0"),"}' PORT.csv > new.sql
+Then, run the create_database.py script to create the schema. Enter the insert.sql script into the mysql shell.
 
-Replace delimiting semicolons in PORT.CSV with
-
-    sed 's/;/,/g' PORT.csv > new.csv
-
-Replace \n escapes with NULL with
-
-    sed 's/\\N/NULL/g' Vessel_Data.mysql > new.mysql

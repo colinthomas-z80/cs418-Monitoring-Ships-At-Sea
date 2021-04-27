@@ -1,17 +1,18 @@
 import mysql.connector
 from mysql.connector import errorcode
 
+import time
+
 import sys, re
 from mysqlutils import SQL_runner
 
-f = open('new.mysql')
+f = open('schema.sql')
 script = f.read()
 f.close()
 
-queries = script.split(';')
-
 try:
-    for q in queries:
-        err = SQL_runner().run(q)
+    err = SQL_runner().run(script)
 except:
     print(err)
+    print("Error Creating Schema")
+
