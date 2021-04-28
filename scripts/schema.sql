@@ -102,6 +102,10 @@ create table STATIC_DATA(
 	AISDestination varchar(50),
 	ETA datetime,
 	DestinationPort_Id mediumint unsigned,
+	A int,
+	B int,
+	C int,
+	D int,
 	primary key (AISMessage_Id),
 	foreign key (DestinationPort_Id) references PORT(Id)
 );

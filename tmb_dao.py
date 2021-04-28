@@ -22,21 +22,27 @@ class tmb_dao:
             id = random.randint(1, 16777214)
             ais_query = "INSERT INTO AISDraft.AIS_MESSAGE VALUES ({0}, STR_TO_DATE('{1}','%Y-%m-%dT%H:%i:%s.000Z'), {2}, '{3}', {4});".format(
                     id, timestamp, mmsi, msgclass, "NULL")
-            pos_query = "INSERT INTO TABLE POSITION_REPORT VALUES({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11});".format( 
-                    id, status, longitude, latitude, rot, sog, cog, heading, "NULL", 1, "NULL", "NULL") 
+            pos_query = "INSERT INTO AISDraft.POSITION_REPORT VALUES({0}, '{1}', {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11});".format( 
+                    id, status, longitude, latitude, rot, sog, cog, heading, "NULL", "NULL", "NULL", "NULL") 
 
             print(SQL_runner().run(ais_query))
-            
+            print(SQL_runner().run(pos_query))
             
 
         elif msgtype == "static_data":
             imo, callsign, name, vesseltype, cargotype, length, breadth, draught, destination,
             eta, a, b, c, d = static_extract(msg)
 
-
-        
-        print(status)
-
+            id = random.randint(1, 16777214)
+            ais_query = "INSERT INTO AISDraft.AIS_MESSAGE VALUES ({0}, STR_TO_DATE('{1}','%Y-%m-%dT%H:%i:%s.000Z'),{2},'{3}',{4});".format(
+                    id, timestamp, mmsi, msgclass, "NULL")
+            static_query = ("INSERT INTO AISDraft.STATIC_DATA VALUES ({0},{1},'{2}','{3}','{4}','{5}',{6},{7},{8},{9},'{10}', \
+                STR_TO_DATE('{11}','%Y-%m-%dT%H:%i:%s.000Z'),{12},{13},{14},{15});".format(
+                id, imo, callsign, name, vesseltype, cargotype, length, breadth, draught, destination, eta, a, b, c, d))
+            
+            print(SQL_runner().run(ais_query))
+            print(SQL_runner().run(static_query))
+            
 
 def pre_extract(data):
     return data["Timestamp"], data["Class"], data["MMSI"], data["MsgType"]
@@ -53,4 +59,3 @@ dao = tmb_dao()
 
 dao.insert_msg(ex)
 
-print(SQL_runner().run("SELECT * FROM AISDraft.AIS_MESSAGE;"))
