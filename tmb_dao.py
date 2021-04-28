@@ -37,7 +37,7 @@ class tmb_dao:
             ais_query = "INSERT INTO AISDraft.AIS_MESSAGE VALUES ({0}, STR_TO_DATE('{1}','%Y-%m-%dT%H:%i:%s.000Z'),{2},'{3}',{4});".format(
                     id, timestamp, mmsi, msgclass, "NULL")
             static_query = ("INSERT INTO AISDraft.STATIC_DATA VALUES ({0},{1},'{2}','{3}','{4}','{5}',{6},{7},{8},{9},'{10}', \
-                STR_TO_DATE('{11}','%Y-%m-%dT%H:%i:%s.000Z'),{12},{13},{14},{15});".format(
+            STR_TO_DATE('{11}','%Y-%m-%dT%H:%i:%s.000Z'),{12},{13},{14},{15});".format(
                 id, imo, callsign, name, vesseltype, cargotype, length, breadth, draught, destination, eta, a, b, c, d))
             
             print(SQL_runner().run(ais_query))
@@ -58,4 +58,73 @@ def static_extract(data):
 dao = tmb_dao()
 
 dao.insert_msg(ex)
+
+def insert_message_batch(self, batch):
+    if type(batch) is str:
+        print("Incorrect parameter type: should be a list of messages.")
+        return -1
+    if self.is_stub:
+        return len(batch)
+
+        cursor = con.cursor()
+
+        inserted = 0
+
+        for msg in batch:
+            timestamp = msg['Timestap'][:-1].replace('T', ' ')
+
+            try:
+                cursor.execute("INSERT INTO AIS_MESSAGE VALUES (NULL, '{}', '{}', '{}', NULL)".format(timestamp, msg['MMSI'], msg['Class']))
+
+                last_id = cursor.lastrowid
+
+                if msg['MsgType'] == 'position_report':
+                    query = "INSERT INTO POSITION_REPORT VALUES ({}, '{}', {}, {}, {}, {}, {},{}, NULL, NULL, NULL, NULL)".format(
+                        last_id, msg['Status'],
+                        msg['Position']['Coordinates'][1],
+                        msg['Position']['Coordinates'][0],
+                        msg['RoT'] if 'RoT' in msg else 'NULL',
+                        msg['SoG'] if 'SoG' in msg else 'NULL',
+                        msg['CoG'] if 'CoG' in msg else 'NULL',
+                        msg['Heading'] if 'Heading' in msg else 'NULL',)
+                cursor.execute(query)
+                print(SQL_runner().run(query))
+                print(f"INSERTED: {cursor.rowcount}")
+
+            except Exception as e:
+                print(e)
+
+        return inserted
+
+# Renet showed this code in class so if this helps in any way
+class Message:
+    def __init__(self, msg):
+
+        self.timestamp = msg['Timestamp'][:-1].replace('T', ' ')
+        self.mmsi = msg['MMSI']
+        self.equiptclass = msg['Class']
+
+    def to_shared_sql_values(self):
+        return "(NULL, '{}', {}, '{}', NULL)".format(self.timestamp, self.mmsi, self.equiptclass)
+
+
+class PositionReport:
+
+    def __init__(self, msg):
+
+        super().__init__(msg)
+
+        self.id = None
+        self.status = msg['Status']
+        self.longitude = msg['Position']['coordinates'][1]
+        self.latitude = msg['Position']['coordinates'][0]
+        self.rot = msg['RoT'] if 'RoT' in msg else 'NULL',
+        self.sog = msg['SoG'] if 'SoG' in msg else 'NULL',
+        self.cog = msg['CoG'] if 'CoG' in msg else 'NULL',
+        self.heading = msg['Heading'] if 'Heading' in msg else 'NULL'
+
+    def to_position_report_sql_values(self):
+
+        if not self.id:
+            return None
 
