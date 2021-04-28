@@ -13,7 +13,7 @@ ex2 = '{"Timestamp":"2020-11-18T00:00:00.000Z","Class":"Class A","MMSI":21902363
 
 class tmb_dao:
 
-    # individual json object
+    # takes individual json ais message as a string
     def insert_msg(self, ais_json):
         msg = json.loads(ais_json)
         timestamp, msgclass, mmsi, msgtype = pre_extract(msg)
@@ -47,7 +47,20 @@ class tmb_dao:
             
             print(SQL_runner().run(ais_query))
             print(SQL_runner().run(static_query))
+
+    # takes file of json ais messages
+    def insert_message_batch(self, batch_ais_json):
+        f = open(batch_ais_json)
+        batch_as_json = json.loads(f.read())
+
+        for msg in batch_as_json:
+            self.insert_msg(str(msg).replace("\'","\"")) # replace double quotes removed by json.loads
             
+
+
+
+
+
 
 def pre_extract(data):
     return data["Timestamp"], data["Class"], data["MMSI"], data["MsgType"]
@@ -62,46 +75,9 @@ def static_extract(data):
            data["Draught"], data["Destination"], data["ETA"], data["A"], data["B"], data["C"], data["D"])
 
 
-dao = tmb_dao()
 
-dao.insert_msg(ex)
+tmb_dao().insert_message_batch("sample_input.json")
 
-def insert_message_batch(self, batch):
-    if type(batch) is str:
-        print("Incorrect parameter type: should be a list of messages.")
-        return -1
-    if self.is_stub:
-        return len(batch)
-
-        cursor = con.cursor()
-
-        inserted = 0
-
-        for msg in batch:
-            timestamp = msg['Timestap'][:-1].replace('T', ' ')
-
-            try:
-                cursor.execute("INSERT INTO AIS_MESSAGE VALUES (NULL, '{}', '{}', '{}', NULL)".format(timestamp, msg['MMSI'], msg['Class']))
-
-                last_id = cursor.lastrowid
-
-                if msg['MsgType'] == 'position_report':
-                    query = "INSERT INTO POSITION_REPORT VALUES ({}, '{}', {}, {}, {}, {}, {},{}, NULL, NULL, NULL, NULL)".format(
-                        last_id, msg['Status'],
-                        msg['Position']['Coordinates'][1],
-                        msg['Position']['Coordinates'][0],
-                        msg['RoT'] if 'RoT' in msg else 'NULL',
-                        msg['SoG'] if 'SoG' in msg else 'NULL',
-                        msg['CoG'] if 'CoG' in msg else 'NULL',
-                        msg['Heading'] if 'Heading' in msg else 'NULL',)
-                cursor.execute(query)
-                print(SQL_runner().run(query))
-                print(f"INSERTED: {cursor.rowcount}")
-
-            except Exception as e:
-                print(e)
-
-        return inserted
 
 # Renet showed this code in class so if this helps in any way
 class Message:
