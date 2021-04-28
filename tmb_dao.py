@@ -61,7 +61,3 @@ def static_extract(data):
            data["Draught"], data["Destination"], data["ETA"], data["A"], data["B"], data["C"], data["D"])
 
 
-dao = tmb_dao()
-
-dao.insert_msg(ex2)
-
