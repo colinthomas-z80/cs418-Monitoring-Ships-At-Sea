@@ -34,8 +34,8 @@ class tmb_dao:
             pos_query = "INSERT INTO AISDraft.POSITION_REPORT VALUES({0}, '{1}', {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11});".format( 
                     id, status, longitude, latitude, rot, sog, cog, heading, "NULL", "NULL", "NULL", "NULL") 
 
-            print(SQL_runner().run(ais_query))
-            print(SQL_runner().run(pos_query))
+            SQL_runner().run(ais_query)
+            SQL_runner().run(pos_query)
             
 
         elif msgtype == "static_data":
@@ -50,8 +50,8 @@ class tmb_dao:
                 STR_TO_DATE('{10}','%Y-%m-%dT%H:%i:%s.000Z'),{11},{12},{13},{14});".format(
                 id, imo, callsign, name, vesseltype, cargotype, length, breadth, draught, destination, eta, a, b, c, d))
             
-            print(SQL_runner().run(ais_query))
-            print(SQL_runner().run(static_query))
+            SQL_runner().run(ais_query)
+            SQL_runner().run(static_query)
 
 
 
@@ -100,6 +100,7 @@ def static_extract(data):
            draught, destination, eta, a, b, c, d)
 
 
+#tmb_dao().insert_message_batch("sample_input.json")
 
 # Renet showed this code in class so if this helps in any way
 class Message:
