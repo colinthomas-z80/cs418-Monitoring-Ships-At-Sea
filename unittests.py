@@ -3,6 +3,7 @@ import create_database
 import mysqlutils
 import tmb_dao
 from mysql.connector import Error
+import re
 
 
 class ais_unit_tests(test.TestCase):
@@ -82,6 +83,21 @@ class ais_unit_tests(test.TestCase):
         query = "SELECT AISDraft.ais_message.timestamp, AISDraft.position_report.navigationalstatus FROM AISDraft.ais_message, AISDraft.position_report WHERE AISDraft.ais_message.mmsi=304858000 AND AISDraft.ais_message.id=AISDraft.position_report.aismessage_id;"
         program_output = mysqlutils.SQL_runner().run(query)
         self.assertEqual(true_output, str(program_output))
+
+    # Test for grabbing mySQL datafile location
+    def test_request_mysql_files(self):
+        output = mysqlutils.SQL_runner().run("SELECT @@GLOBAL.secure_file_priv;")
+        output = str(output[0])
+
+        translation_table = dict.fromkeys(map(ord, '(),'), None)
+        output = output.translate(translation_table)
+
+        to_remove = "\\"
+        pattern = "(?P<char>[" + re.escape(to_remove) + "])(?P=char)+"
+        output = re.sub(pattern, r"\1", output)
+
+        print(str(output))
+        self.assertEqual(str(output), "\'C:\\Users\\david\\MySQLData\\Uploads\\\'")
 
 if __name__ == '__main__':
     test.main()
