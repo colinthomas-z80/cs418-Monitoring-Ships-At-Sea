@@ -62,9 +62,9 @@ class tmb_dao:
     def insert_message_batch(self, batch_ais_json):
         f = open(batch_ais_json)
         batch_as_json = json.loads(f.read())
-
         for msg in batch_as_json:
-            self.insert_msg(msg, 1)            
+            self.insert_msg(msg, 1)
+        f.close()
 
 
 def pre_extract(data):

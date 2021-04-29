@@ -62,7 +62,7 @@ class ais_unit_tests(test.TestCase):
                              "Position":{"type":"Point","coordinates":[55.522592,15.068637]},"Status":"Under way using engine","RoT":2.2,"SoG":14.8,"CoG":62,"Heading":61}'
         tmb_dao.tmb_dao().insert_msg(ex, 0)
         expected = "[(datetime.datetime(2020, 11, 18, 0, 0), 'Under way using engine')]"
-        query = "select AISDraft.ais_message.timestamp, AISDraft.position_report.navigationalstatus from AISDraft.ais_message, AISDraft.position_report where AISDraft.ais_message.mmsi=244265000 and AISDraft.ais_message.id=AISDraft.position_report.aismessage_id;"
+        query = "SELECT AISDraft.ais_message.Timestamp, AISDraft.position_report.Navigationalstatus FROM AISDraft.ais_message, AISDraft.position_report WHERE AISDraft.ais_message.MMSI=244265000 AND AISDraft.ais_message.Id=AISDraft.position_report.AISMessage_Id;"
         actual = mysqlutils.SQL_runner().run(query)
         self.assertEqual(expected, str(actual))
 
@@ -79,7 +79,7 @@ class ais_unit_tests(test.TestCase):
     def test_insert_message_batch(self):
         tmb_dao.tmb_dao().insert_message_batch("sample_input.json")
         true_output = "[(datetime.datetime(2020, 11, 18, 0, 0), 'Under way using engine')]"
-        query = "select AISDraft.ais_message.timestamp, AISDraft.position_report.navigationalstatus from AISDraft.ais_message, AISDraft.position_report where AISDraft.ais_message.mmsi=304858000 and AISDraft.ais_message.id=AISDraft.position_report.aismessage_id;"
+        query = "SELECT AISDraft.ais_message.timestamp, AISDraft.position_report.navigationalstatus FROM AISDraft.ais_message, AISDraft.position_report WHERE AISDraft.ais_message.mmsi=304858000 AND AISDraft.ais_message.id=AISDraft.position_report.aismessage_id;"
         program_output = mysqlutils.SQL_runner().run(query)
         self.assertEqual(true_output, str(program_output))
 
