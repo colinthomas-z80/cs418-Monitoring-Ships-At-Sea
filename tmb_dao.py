@@ -34,9 +34,11 @@ class tmb_dao:
             pos_query = "INSERT INTO AISDraft.POSITION_REPORT VALUES({0}, '{1}', {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11});".format( 
                     id, status, longitude, latitude, rot, sog, cog, heading, "NULL", "NULL", "NULL", "NULL") 
 
-            SQL_runner().run(ais_query)
-            SQL_runner().run(pos_query)
-            
+            try:
+                SQL_runner().run(ais_query)
+                SQL_runner().run(pos_query)
+            except mysql.connector.Error:
+                pass
 
         elif msgtype == "static_data":
             imo, callsign, name, vesseltype, cargotype, length, breadth, draught, destination, eta, a, b, c, d = static_extract(msg)
@@ -45,13 +47,14 @@ class tmb_dao:
             id = random.randint(1, 16777214)
             ais_query = "INSERT INTO AISDraft.AIS_MESSAGE VALUES ({0}, STR_TO_DATE('{1}','%Y-%m-%dT%H:%i:%s.000Z'),{2},'{3}',{4});".format(
                     id, timestamp, mmsi, msgclass, "NULL")
-
             static_query = ("INSERT INTO AISDraft.STATIC_DATA VALUES ({0},{1},'{2}','{3}','{4}','{5}',{6},{7},{8},'{9}',\
                 STR_TO_DATE('{10}','%Y-%m-%dT%H:%i:%s.000Z'),{11},{12},{13},{14});".format(
                 id, imo, callsign, name, vesseltype, cargotype, length, breadth, draught, destination, eta, a, b, c, d))
-            
-            SQL_runner().run(ais_query)
-            SQL_runner().run(static_query)
+            try:
+                SQL_runner().run(ais_query)
+                SQL_runner().run(static_query)
+            except mysql.connector.Error:
+                pass
 
 
 

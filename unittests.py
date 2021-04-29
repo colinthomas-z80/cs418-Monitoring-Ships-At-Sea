@@ -56,15 +56,32 @@ class ais_unit_tests(test.TestCase):
             error = True
         self.assertTrue(error)
 
+    # Test successful insert for insert_msg()
+    def test_insert_message(self):
+        ex = '{"Timestamp":"2020-11-18T00:00:00.000Z","Class":"Class A","MMSI":244265000,"MsgType":"position_report", \
+                             "Position":{"type":"Point","coordinates":[55.522592,15.068637]},"Status":"Under way using engine","RoT":2.2,"SoG":14.8,"CoG":62,"Heading":61}'
+        tmb_dao.tmb_dao().insert_msg(ex, 0)
+        expected = "[(datetime.datetime(2020, 11, 18, 0, 0), 'Under way using engine')]"
+        query = "select AISDraft.ais_message.timestamp, AISDraft.position_report.navigationalstatus from AISDraft.ais_message, AISDraft.position_report where AISDraft.ais_message.mmsi=244265000 and AISDraft.ais_message.id=AISDraft.position_report.aismessage_id;"
+        actual = mysqlutils.SQL_runner().run(query)
+        self.assertEqual(expected, str(actual))
+
     # Test for insert_message_batch()
     def test_insert_message_batch_pass(self):
         error = False
         try:
-            tmb_dao.tmb_dao().insert_message_batch("scripts/sample_test.json")
-        except Exception as e:
-            print(e)
+            tmb_dao.tmb_dao().insert_message_batch("sample_input.json")
+        except Exception:
             error = True
         self.assertFalse(error)
+
+    # Test successful insert for insert_message_batch()
+    def test_insert_message_batch(self):
+        tmb_dao.tmb_dao().insert_message_batch("sample_input.json")
+        true_output = "[(datetime.datetime(2020, 11, 18, 0, 0), 'Under way using engine')]"
+        query = "select AISDraft.ais_message.timestamp, AISDraft.position_report.navigationalstatus from AISDraft.ais_message, AISDraft.position_report where AISDraft.ais_message.mmsi=304858000 and AISDraft.ais_message.id=AISDraft.position_report.aismessage_id;"
+        program_output = mysqlutils.SQL_runner().run(query)
+        self.assertEqual(true_output, str(program_output))
 
 if __name__ == '__main__':
     test.main()
