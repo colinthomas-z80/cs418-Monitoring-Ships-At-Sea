@@ -13,10 +13,15 @@ ex2 = '{"Timestamp":"2020-11-18T00:00:00.000Z","Class":"Class A","MMSI":21902363
 
 class tmb_dao:
 
-    # takes individual json ais message as a string
-    def insert_msg(self, ais_json):
-        msg = json.loads(ais_json)
-        timestamp, msgclass, mmsi, msgtype = pre_extract(msg)
+    # takes individual ais message as a string or json object
+    def insert_msg(self, ais_json, is_json):
+
+        if is_json == 0: # message is a string
+            msg = json.loads(ais_json)
+            timestamp, msgclass, mmsi, msgtype = pre_extract(msg)
+        else:            # message is already json
+            msg = ais_json
+            timestamp, msgclass, mmsi, msgtype = pre_extract(msg)
 
         if msgtype == "position_report":
             position_obj, status, rot, sog, cog, heading = pos_extract(msg)
@@ -48,36 +53,55 @@ class tmb_dao:
             print(SQL_runner().run(ais_query))
             print(SQL_runner().run(static_query))
 
+
+
     # takes file of json ais messages
     def insert_message_batch(self, batch_ais_json):
         f = open(batch_ais_json)
         batch_as_json = json.loads(f.read())
 
         for msg in batch_as_json:
-            self.insert_msg(str(msg).replace("\'","\"")) # replace double quotes removed by json.loads
-            
-
-
-
-
+            self.insert_msg(msg, 1)            
 
 
 def pre_extract(data):
     return data["Timestamp"], data["Class"], data["MMSI"], data["MsgType"]
 
 def pos_extract(data):
-    return data["Position"], data["Status"], data["RoT"], data["SoG"], data["CoG"], data["Heading"]
+    rot = data["RoT"] if "RoT" in data else "NULL"
+    sog = data["SoG"] if "SoG" in data else "NULL"
+    cog = data["CoG"] if "CoG" in data else "NULL"
+    position = data["Position"] if "Position" in data else "NULL"
+    status = data["Status"] if "Status" in data else "NULL"
+    heading = data["Heading"] if "Heading" in data else "NULL"
+    return position, status, rot, sog, cog, heading
 
 def static_extract(data):
-    ct = data["CargoTye"] if "CargoTye" in data else data["CargoType"] # intentional accounting for typo
+    #special null checking intentional accounting for typo
+    try:   
+        cargotype = data["CargoType"]
+    except KeyError:
+        cargotype = data["CargoTye"] if "CargoTye" in data else "NULL"
+
+    callsign = data["CallSign"] if "CallSign" in data else "NULL"
+    name = data["Name"] if "Name" in data else "NULL"
     imo = data["IMO"] if data["IMO"] != "Unknown" else "NULL"
-    return (imo, data["CallSign"], data["Name"], data["VesselType"], ct, data["Length"], data["Breadth"],
-           data["Draught"], data["Destination"], data["ETA"], data["A"], data["B"], data["C"], data["D"])
+    vesseltype = data["VesselType"] if "VesselType" in data else "NULL"
+    length = data["Length"] if "Length" in data else "NULL"
+    breadth = data["Breadth"] if "Breadth" in data else "NULL"
+    draught = data["Draught"] if "Draught" in data else "NULL"
+    destination = data["Destination"] if "Destination" in data else "NULL"
+    eta = data["ETA"] if "ETA" in data else "NULL"
+    a = data["A"] if "A" in data else "NULL"
+    b = data["B"] if "B" in data else "NULL"
+    c = data["C"] if "C" in data else "NULL"
+    d = data["D"] if "D" in data else "NULL"
+    return (imo, callsign, name, vesseltype, cargotype, length, breadth,
+           draught, destination, eta, a, b, c, d)
 
 
 
 tmb_dao().insert_message_batch("sample_input.json")
-
 
 # Renet showed this code in class so if this helps in any way
 class Message:
@@ -101,7 +125,7 @@ class PositionReport:
         self.status = msg['Status']
         self.longitude = msg['Position']['coordinates'][1]
         self.latitude = msg['Position']['coordinates'][0]
-        self.rot = msg['RoT'] if 'RoT' in msg else 'NULL',
+        self.rot = msg['RoT'] if 'RoT' in msg else 'NULL',      # these commas might be unintentional?
         self.sog = msg['SoG'] if 'SoG' in msg else 'NULL',
         self.cog = msg['CoG'] if 'CoG' in msg else 'NULL',
         self.heading = msg['Heading'] if 'Heading' in msg else 'NULL'
