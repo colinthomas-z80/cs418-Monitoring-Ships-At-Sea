@@ -101,8 +101,6 @@ def static_extract(data):
 
 
 
-tmb_dao().insert_message_batch("sample_input.json")
-
 # Renet showed this code in class so if this helps in any way
 class Message:
     def __init__(self, msg):
