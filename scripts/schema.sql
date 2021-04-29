@@ -53,7 +53,7 @@ create table MAP_VIEW(
 
 
 create table AIS_MESSAGE(
-	Id mediumint unsigned,
+	Id varchar(64),
 	Timestamp datetime,
 	MMSI int,
 	Class enum('Class A','Class B','AtoN','Base Station'),
@@ -88,9 +88,8 @@ create table PORT(
 
 
 ## Create here the STATIC_DATA table:
-
 create table STATIC_DATA(
-	AISMessage_Id mediumint unsigned,
+	AISMessage_Id varchar(64),
 	AISIMO int,
 	CallSign varchar(8),
 	Name varchar(30),
@@ -101,10 +100,7 @@ create table STATIC_DATA(
 	Draught tinyint,
 	AISDestination varchar(50),
 	ETA datetime,
-	A int,
-	B int,
-	C int,
-	D int,
+	DestinationPort varchar(50),
 	primary key (AISMessage_Id)
 );
 
@@ -114,7 +110,7 @@ create table STATIC_DATA(
 
 
 create table POSITION_REPORT(
-	AISMessage_Id mediumint unsigned,
+	AISMessage_Id varchar(64),
 	NavigationalStatus varchar(40),
 	Longitude decimal(9,6),
 	Latitude decimal(8,6),
@@ -122,7 +118,7 @@ create table POSITION_REPORT(
 	SoG decimal(4,1),
 	CoG decimal(4,1),
 	Heading smallint,
-	LastStaticData_Id mediumint unsigned,
+	LastStaticData_Id varchar(64),
 	MapView1_Id mediumint,
 	MapView2_Id mediumint,
 	MapView3_Id mediumint,
