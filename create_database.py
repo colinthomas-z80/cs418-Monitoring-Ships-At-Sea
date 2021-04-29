@@ -25,6 +25,8 @@ config_file = 'connection_data.conf'
 
 print("Populating Tables...")
 
+# can't use the sql runner for this because it will split up the queries with semicolons 
+
 try:
     with mysqlutils.MySQLConnectionManager(config_file) as con:
         with mysqlutils.MySQLCursorManager( con ) as cursor:

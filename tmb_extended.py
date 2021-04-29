@@ -8,7 +8,7 @@ class tmb_extended:
     def read_position_by_mmsi(self, mmsi):
         query = ("SELECT Latitude, Longitude FROM AISDraft.POSITION_REPORT  \
                   WHERE AISMessage_Id IN                                    \
-                  (SELECT Id FROM AISDraft.AIS_MESSAGE WHERE MMSI = {0});").format(mmsi)
+                  (SELECT Id FROM AISDraft.AIS_MESSAGE WHERE MMSI = {0} ORDER BY Timestamp) LIMIT 1;").format(mmsi)
         messages = SQL_runner().run(query)
         print(messages)
     
