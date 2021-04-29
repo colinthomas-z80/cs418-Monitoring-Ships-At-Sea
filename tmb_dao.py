@@ -28,7 +28,7 @@ class tmb_dao:
             longitude = msg["Position"]["coordinates"][0]
             latitude  = msg["Position"]["coordinates"][1]
 
-            id = random.randint(1, 16777214)
+            id = random.randint(0,4294967290)
             ais_query = "INSERT INTO AISDraft.AIS_MESSAGE VALUES ({0}, STR_TO_DATE('{1}','%Y-%m-%dT%H:%i:%s.000Z'), {2}, '{3}', {4});".format(
                     id, timestamp, mmsi, msgclass, "NULL")
             pos_query = "INSERT INTO AISDraft.POSITION_REPORT VALUES({0}, '{1}', {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11});".format( 
@@ -39,16 +39,16 @@ class tmb_dao:
             
 
         elif msgtype == "static_data":
-            imo, callsign, name, vesseltype, cargotype, length, breadth, draught, destination, eta, a, b, c, d = static_extract(msg)
+            imo, callsign, name, vesseltype, cargotype, length, breadth, draught, destination, eta, destinationport = static_extract(msg)
 
 
-            id = random.randint(1, 16777214)
+            id = random.randint(0,4294967290)
             ais_query = "INSERT INTO AISDraft.AIS_MESSAGE VALUES ({0}, STR_TO_DATE('{1}','%Y-%m-%dT%H:%i:%s.000Z'),{2},'{3}',{4});".format(
                     id, timestamp, mmsi, msgclass, "NULL")
 
             static_query = ("INSERT INTO AISDraft.STATIC_DATA VALUES ({0},{1},'{2}','{3}','{4}','{5}',{6},{7},{8},'{9}',\
-                STR_TO_DATE('{10}','%Y-%m-%dT%H:%i:%s.000Z'),{11},{12},{13},{14});".format(
-                id, imo, callsign, name, vesseltype, cargotype, length, breadth, draught, destination, eta, a, b, c, d))
+                STR_TO_DATE('{10}','%Y-%m-%dT%H:%i:%s.000Z'),{11});".format(
+                id, imo, callsign, name, vesseltype, cargotype, length, breadth, draught, destination, eta, destinationport))
             
             SQL_runner().run(ais_query)
             SQL_runner().run(static_query)
@@ -92,15 +92,12 @@ def static_extract(data):
     draught = data["Draught"] if "Draught" in data else "NULL"
     destination = data["Destination"] if "Destination" in data else "NULL"
     eta = data["ETA"] if "ETA" in data else "NULL"
-    a = data["A"] if "A" in data else "NULL"
-    b = data["B"] if "B" in data else "NULL"
-    c = data["C"] if "C" in data else "NULL"
-    d = data["D"] if "D" in data else "NULL"
+    destinationport = data["DestinationPort"] if "DestinationPort" in data else "NULL"
     return (imo, callsign, name, vesseltype, cargotype, length, breadth,
-           draught, destination, eta, a, b, c, d)
+           draught, destination, eta, destinationport)
 
 
-#tmb_dao().insert_message_batch("sample_input.json")
+tmb_dao().insert_message_batch("sample_input.json")
 
 # Renet showed this code in class so if this helps in any way
 class Message:
