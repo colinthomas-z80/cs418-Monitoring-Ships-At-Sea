@@ -89,7 +89,9 @@ class SQL_runner():
 				print("Database does not exist")
 			else:
 				print(err)
+			raise err
 		except Exception as e:
 			print( e )
-		finally: 
+			raise e
+		else:
 			return rs
