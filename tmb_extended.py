@@ -19,12 +19,21 @@ class tmb_extended:
     # 98000 vessels have values for mmsi, where 105894 do not. I will have to ask if that is okay.
     def read_recent_vessel_positions(self):
         runnr = SQL_runner()
+        # find unique mmsi that have a position report
         query2 = "\
-                  SELECT MMSI, MAX(Timestamp) FROM AISDraft.POSITION_REPORT, AISDraft.AIS_MESSAGE \
+                  SELECT DISTINCT MMSI FROM AISDraft.POSITION_REPORT, AISDraft.AIS_MESSAGE \
                   WHERE POSITION_REPORT.AISMessage_Id = AIS_MESSAGE.Id GROUP BY MMSI;"
-                  
         result = runnr.run(query2)
-        return result
 
-print(tmb_extended().read_recent_vessel_positions())
+        positions = []
+        for mmsi in result:
+            rs = self.read_position_by_mmsi(mmsi[0])
+            positions.append(rs)
+
+        return positions
+
+res = tmb_extended().read_recent_vessel_positions()
+for el in res:
+    print(el)
+
 #print(tmb_extended().read_position_by_mmsi(235095435))
