@@ -32,8 +32,12 @@ class tmb_extended:
 
         return positions
 
-res = tmb_extended().read_recent_vessel_positions()
-for el in res:
-    print(el)
+    # Return the vessel row that matches the given mmsi
+    def read_vessel_information(self, mmsi):
+        query = "SELECT * FROM AISDraft.VESSEL WHERE MMSI = {0}".format(mmsi)
+        rs = SQL_runner().run(query)
+        return rs
 
-#print(tmb_extended().read_position_by_mmsi(235095435))
+#print(tmb_extended().read_position_by_mmsi(235095435)) 
+
+print(tmb_extended().read_vessel_information(894512840215325))
