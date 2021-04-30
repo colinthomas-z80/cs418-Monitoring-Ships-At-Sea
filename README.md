@@ -4,11 +4,7 @@ Option A
 
 # Creating the database
 
-Copy the csv data files from canvas into your mysql data directory.
-<br><br>
-You can see what directory that is in the mysql shell with:
+edit the connection_data.conf file to you local mysql server login
 
-    SELECT @@GLOBAL.secure_file_priv;
-
-Then, run the create_database.py script to create the schema. Enter the insert.sql script into the mysql shell.
+run the create_database.py script to generate the database with the constant data
 
