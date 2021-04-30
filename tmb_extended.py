@@ -14,6 +14,16 @@ class tmb_extended:
                   
         result = SQL_runner().run(query)
         return result
+
+    def read_last_5_positions(self, mmsi):
+        query = "SELECT MMSI, Latitude, Longitude FROM AISDraft.POSITION_REPORT, AISDraft.AIS_MESSAGE \
+                  WHERE POSITION_REPORT.AISMessage_Id = AIS_MESSAGE.Id  \
+                  AND AIS_MESSAGE.MMSI = {0} \
+                  ORDER BY Timestamp \
+                  LIMIT 5;".format(mmsi) 
+                  
+        result = SQL_runner().run(query)
+        return result
     
     # Find all mmsi with a position report on file. return result set of mmsi and position
     # 98000 vessels have values for mmsi, where 105894 do not. I will have to ask if that is okay.
@@ -40,4 +50,4 @@ class tmb_extended:
 
 #print(tmb_extended().read_position_by_mmsi(235095435)) 
 
-print(tmb_extended().read_vessel_information(894512840215325))
+print(tmb_extended().read_last_5_positions(244089000))
