@@ -1,6 +1,7 @@
 import tmb_dao
 from mysql.connector import errorcode
 from mysqlutils import SQL_runner
+import datetime
 
 class tmb_extended:
 
@@ -81,7 +82,7 @@ class tmb_extended:
         get_name = "SELECT NAME FROM AISDraft.PORT WHERE Id = '{0}'".format(id)
         name = SQL_runner().run(get_name)
         
-        if not name:
+        if not name: # there is no port with that id
             return []
         else:
             dest = "SELECT AISMessage_Id FROM AISDraft.STATIC_DATA WHERE AISDestination = '{0}'".format(name[0][0])
@@ -98,6 +99,16 @@ class tmb_extended:
                 return ports
             return positions
 
+    # delete messages older than 5 minutes, from the time passed to the function. That should
+    # make it easier to test. Pass the date as a string in the mysql format of "YYYY-MM-DD HH:MM:SS"
+    def delete_ais_older_than_five_minutes(self, current_time):
+        now = datetime.datetime.strptime(current_time, '%Y-%m-%d %H:%M:%S')
+        before = now - datetime.timedelta(0,300)
+
+        query = "DELETE FROM AISDraft.AIS_MESSAGE WHERE Timestamp < '{0}'".format(before) # deletes null values too, sounds good to me
+        deleted = SQL_runner().run(query)  
+        return deleted
+
 
 #print(tmb_extended().read_position_by_mmsi(311000929)) 
 
@@ -108,3 +119,5 @@ class tmb_extended:
 #print(tmb_extended().read_positions_of_ships_headed_to_port("HANSTHOLM"))
 
 #print(tmb_extended().read_positions_of_ships_headed_to_port_id(2974))
+
+print(tmb_extended().delete_ais_older_than_five_minutes("2021-11-18 00:00:03"))
