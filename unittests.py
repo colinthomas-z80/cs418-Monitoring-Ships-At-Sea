@@ -28,7 +28,7 @@ class ais_unit_tests(test.TestCase):
         create_database
         error = False
         try:
-            mysqlutils.SQL_runner().run("US AISDraft")
+            mysqlutils.SQL_runner().run("USE AISDraft")
         except Exception:
             error = True
         self.assertTrue(error)

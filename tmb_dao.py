@@ -1,15 +1,9 @@
 import json
+import datetime
 import mysql.connector
 import random
 from mysql.connector import errorcode
 from mysqlutils import SQL_runner
-
-ex = '{"Timestamp":"2020-11-18T00:00:00.000Z","Class":"Class A","MMSI":244265000,"MsgType":"position_report", \
-     "Position":{"type":"Point","coordinates":[55.522592,15.068637]},"Status":"Under way using engine","RoT":2.2,"SoG":14.8,"CoG":62,"Heading":61}'
-
-ex2 = '{"Timestamp":"2020-11-18T00:00:00.000Z","Class":"Class A","MMSI":219023635,"MsgType":"static_data","IMO":"Unknown","CallSign":"OX3103",\
-    "Name":"SKJOLD R","VesselType":"Other","CargoTye":"No additional information","Length":12,"Breadth":4,"Draught":1.5,"Destination":"HANSTHOLM",\
-        "ETA":"2021-07-14T23:00:00.000Z","A":8,"B":4,"C":2,"D":2}'
 
 class tmb_dao:
 
@@ -25,14 +19,18 @@ class tmb_dao:
 
         if msgtype == "position_report":
             position_obj, status, rot, sog, cog, heading = pos_extract(msg)
-            longitude = msg["Position"]["coordinates"][0]
-            latitude  = msg["Position"]["coordinates"][1]
-
+            
             id = random.randint(0,4294967290)
+            longitude = msg["Position"]["coordinates"][1]
+            latitude  = msg["Position"]["coordinates"][0]
+
+            # find out which map tiles contain these coordinates
+            mv1, mv2, mv3 = map_location(latitude, longitude)
+
             ais_query = "INSERT INTO AISDraft.AIS_MESSAGE VALUES ({0}, STR_TO_DATE('{1}','%Y-%m-%dT%H:%i:%s.000Z'), {2}, '{3}', {4});".format(
                     id, timestamp, mmsi, msgclass, "NULL")
             pos_query = "INSERT INTO AISDraft.POSITION_REPORT VALUES({0}, '{1}', {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11});".format( 
-                    id, status, longitude, latitude, rot, sog, cog, heading, "NULL", "NULL", "NULL", "NULL") 
+                    id, status, longitude, latitude, rot, sog, cog, heading, "NULL", mv1, mv2, mv3) 
 
             try:
                 SQL_runner().run(ais_query)
@@ -57,15 +55,169 @@ class tmb_dao:
                 pass
 
 
-
-
     # takes file of json ais messages
     def insert_message_batch(self, batch_ais_json):
         f = open(batch_ais_json)
         batch_as_json = json.loads(f.read())
+
         for msg in batch_as_json:
-            self.insert_msg(msg, 1)
-        f.close()
+            self.insert_msg(msg, 1)       
+
+
+    def read_position_by_mmsi(self, mmsi):
+        query = "SELECT MMSI, Latitude, Longitude, max(Timestamp) FROM AISDraft.POSITION_REPORT, AISDraft.AIS_MESSAGE \
+                  WHERE POSITION_REPORT.AISMessage_Id = AIS_MESSAGE.Id  \
+                  AND AIS_MESSAGE.MMSI = {0} \
+                  GROUP BY MMSI, Latitude, Longitude".format(mmsi) 
+                  
+        result = SQL_runner().run(query)
+        return result
+
+    def read_last_5_positions(self, mmsi):
+        query = "SELECT MMSI, Latitude, Longitude FROM AISDraft.POSITION_REPORT, AISDraft.AIS_MESSAGE \
+                  WHERE POSITION_REPORT.AISMessage_Id = AIS_MESSAGE.Id  \
+                  AND AIS_MESSAGE.MMSI = {0} \
+                  ORDER BY Timestamp \
+                  LIMIT 5;".format(mmsi) 
+                  
+        result = SQL_runner().run(query)
+        return result
+    
+    # Find all mmsi with a position report on file. return result set of mmsi and position
+    # 98000 vessels have values for mmsi, where 105894 do not. I will have to ask if that is okay.
+    def read_recent_vessel_positions(self):
+        runnr = SQL_runner()
+        # find unique mmsi that have a position report
+        query2 = "\
+                  SELECT DISTINCT MMSI FROM AISDraft.POSITION_REPORT, AISDraft.AIS_MESSAGE \
+                  WHERE POSITION_REPORT.AISMessage_Id = AIS_MESSAGE.Id GROUP BY MMSI;"
+        result = runnr.run(query2)
+
+        positions = []
+        for mmsi in result:
+            rs = self.read_position_by_mmsi(mmsi[0])
+            positions.append(rs)
+
+        return positions
+
+    # Return the vessel row that matches the given mmsi
+    def read_vessel_information(self, mmsi):
+        query = "SELECT * FROM AISDraft.VESSEL WHERE MMSI = {0}".format(mmsi)
+        rs = SQL_runner().run(query)
+        return rs
+
+    # return a port with given name
+    def read_port_by_name(self, name):
+        query = "SELECT * FROM AISDraft.PORT WHERE Name = '{0}'".format(name)
+        rs = SQL_runner().run(query)
+        return rs
+
+    # go through static data to find all instances where the port is the destination
+    # find the AIS_MESSAGE parent of the static data, get the distinct mmsi from each vessel
+    # then get the most recent position report from each vessel
+    #
+    # if there are no values returned, return an array of port documents, per the requirements. 
+    def read_positions_of_ships_headed_to_port(self, name):
+        dest = "SELECT AISMessage_Id FROM AISDraft.STATIC_DATA WHERE AISDestination = '{0}'".format(name)
+        query = "SELECT DISTINCT MMSI FROM AISDraft.AIS_MESSAGE WHERE Id IN ({0})".format(dest)
+        mmsi_set = SQL_runner().run(query)
+        
+        positions = []
+        for mmsi in mmsi_set:
+            rs = self.read_position_by_mmsi(mmsi[0])
+            positions.append(rs)
+        
+        if not positions[0]:
+            ports = SQL_runner().run("SELECT * FROM AISDraft.PORT;")
+            return ports
+        return positions
+
+
+    # basically the same as the last query but you need to find the name of the port by its id first
+    # is the port id the number id or the LoCode? I don't know. Right now I figure it is the number.
+    def read_positions_of_ships_headed_to_port_id(self, id):
+        get_name = "SELECT NAME FROM AISDraft.PORT WHERE Id = '{0}'".format(id)
+        name = SQL_runner().run(get_name)
+        
+        if not name: # there is no port with that id
+            return []
+        else:
+            dest = "SELECT AISMessage_Id FROM AISDraft.STATIC_DATA WHERE AISDestination = '{0}'".format(name[0][0])
+            query = "SELECT DISTINCT MMSI FROM AISDraft.AIS_MESSAGE WHERE Id IN ({0})".format(dest)
+            mmsi_set = SQL_runner().run(query)
+            
+            positions = []
+            for mmsi in mmsi_set:
+                rs = self.read_position_by_mmsi(mmsi[0])
+                positions.append(rs)
+            
+            if not positions[0]:
+                ports = SQL_runner().run("SELECT * FROM AISDraft.PORT;")
+                return ports
+            return positions
+
+    # delete messages older than 5 minutes, from the time passed to the function. That should
+    # make it easier to test. Pass the date as a string in the mysql format of "YYYY-MM-DD HH:MM:SS"
+    def delete_ais_older_than_five_minutes(self, current_time):
+        now = datetime.datetime.strptime(current_time, '%Y-%m-%d %H:%M:%S')
+        before = now - datetime.timedelta(0,300)
+
+        query = "DELETE FROM AISDraft.AIS_MESSAGE WHERE Timestamp < '{0}'".format(before) # deletes null values too, sounds good to me
+        deleted = SQL_runner().run(query)  
+        return deleted
+
+    # find mmsis from position reports logged inside the tile id, then get the ship information for each mmsi
+    def read_ship_positions_in_tile(self, id):
+        query = "SELECT DISTINCT MMSI FROM AISDraft.AIS_MESSAGE  \
+                 WHERE Id in (SELECT DISTINCT AISMessage_Id FROM AISDraft.POSITION_REPORT, AISDraft.AIS_MESSAGE  \
+                 WHERE MapView1_Id = '{0}' OR MapView2_Id = '{0}' OR MapView3_Id = '{0}' \
+                 AND AISMessage_Id = Id)".format(id)
+
+        mmsi_set = SQL_runner().run(query)
+        vessels = []
+        for mmsi in mmsi_set:
+            vessels.append(self.read_vessel_information(mmsi[0]))
+        return vessels
+
+
+    # get the level 3 tile the port is in, and read the ship positions in that tile
+    def read_ship_positions_by_port(self, port_name):
+        tile = SQL_runner().run("SELECT PORT.MapView3_Id FROM AISDraft.PORT WHERE Name = '{0}'".format(port_name))
+        if not tile[0]:
+            ports = SQL_runner().run("SELECT * FROM AISDraft.PORT;")
+            return "ports"
+        else:
+            vessels = self.read_ship_positions_in_tile(tile[0][0])
+            return vessels
+
+
+    # get the 4 child tiles of a given level 2 tile id
+    def read_level_3_tiles(self, id):
+        tiles = SQL_runner().run("SELECT Id FROM AISDraft.MAP_VIEW WHERE ContainerMapView_Id = {0}".format(id))
+        rs = []
+        for tile in tiles:  # get it out of a 2 dimensional array
+            rs.append(tile[0])
+        return rs
+    
+    def get_tile_file(self, id):
+        file = SQL_runner().run("SELECT RasterFile FROM AISDraft.MAP_VIEW WHERE Id = {0}".format(id))
+        return file[0][0]     
+
+# find the 3 levels of map tile which contain the coordinate set, hopefully... 
+def map_location(latitude, longitude):
+    query = "SELECT Id FROM AISDraft.MAP_VIEW WHERE \
+             LongitudeW < {0} AND \
+             LongitudeE > {0} AND \
+             LatitudeS < {1} AND \
+             LatitudeN > {1};".format(longitude,latitude)
+
+    rs = SQL_runner().run(query)
+    if len(rs) <= 1:
+        return 1, "NULL", "NULL" # return null if there is no map view that contains the location. top level map view will always be 1
+    return 1, rs[1][0], rs[2][0]  
+
+
+
 
 
 def pre_extract(data):
@@ -103,35 +255,27 @@ def static_extract(data):
 
 #tmb_dao().insert_message_batch("sample_input.json")
 
-# Renet showed this code in class so if this helps in any way
-class Message:
-    def __init__(self, msg):
+#print(map_location(57.49587, 10.501518))
 
-        self.timestamp = msg['Timestamp'][:-1].replace('T', ' ')
-        self.mmsi = msg['MMSI']
-        self.equiptclass = msg['Class']
+#print(tmb_dao().read_position_by_mmsi(244089000)) 
 
-    def to_shared_sql_values(self):
-        return "(NULL, '{}', {}, '{}', NULL)".format(self.timestamp, self.mmsi, self.equiptclass)
+#print(tmb_dao().read_last_5_positions(244089000))
 
+#print(tmb_dao().read_recent_vessel_positions())
 
-class PositionReport:
+#print(tmb_dao().read_port_by_name("Jyllinge"))
 
-    def __init__(self, msg):
+#print(tmb_dao().read_positions_of_ships_headed_to_port("HANSTHOLM"))
 
-        super().__init__(msg)
+#print(tmb_dao().read_positions_of_ships_headed_to_port_id(2974))
 
-        self.id = None
-        self.status = msg['Status']
-        self.longitude = msg['Position']['coordinates'][1]
-        self.latitude = msg['Position']['coordinates'][0]
-        self.rot = msg['RoT'] if 'RoT' in msg else 'NULL',      # these commas might be unintentional?
-        self.sog = msg['SoG'] if 'SoG' in msg else 'NULL',
-        self.cog = msg['CoG'] if 'CoG' in msg else 'NULL',
-        self.heading = msg['Heading'] if 'Heading' in msg else 'NULL'
+#print(tmb_dao().delete_ais_older_than_five_minutes("2021-11-18 00:00:03"))
 
-    def to_position_report_sql_values(self):
+#print(tmb_dao().read_ship_positions_in_tile(53312))
 
-        if not self.id:
-            return None
+#print(tmb_dao().read_ship_positions_by_port("Munkebo"))
+
+#print(tmb_dao().read_level_3_tiles(5036))
+
+#print(tmb_dao().get_tile_file(5036))
 
