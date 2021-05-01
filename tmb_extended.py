@@ -54,8 +54,31 @@ class tmb_extended:
         rs = SQL_runner().run(query)
         return rs
 
-#print(tmb_extended().read_position_by_mmsi(235095435)) 
+    # go through static data to find all instances where the port is the destination
+    # find the AIS_MESSAGE parent of the static data, get the distinct mmsi from each vessel
+    # then get the most recent position report from each vessel
+    #
+    # if there are no values returned, return an array of port documents, per the requirements
+    def read_positions_of_ships_headed_to_port(self, name):
+        dest = "SELECT AISMessage_Id FROM AISDraft.STATIC_DATA WHERE AISDestination = '{0}'".format(name)
+        query = "SELECT DISTINCT MMSI FROM AISDraft.AIS_MESSAGE WHERE Id IN ({0})".format(dest)
+        mmsi_set = SQL_runner().run(query)
+        
+        positions = []
+        for mmsi in mmsi_set:
+            rs = self.read_position_by_mmsi(mmsi[0])
+            positions.append(rs)
+        
+        if not positions[0]:
+            ports = SQL_runner().run("SELECT * FROM AISDraft.PORT;")
+            return ports
+        return positions
+
+
+#print(tmb_extended().read_position_by_mmsi(311000929)) 
 
 #print(tmb_extended().read_last_5_positions(244089000))
 
-print(tmb_extended().read_port_by_name("Jyllinge"))
+#print(tmb_extended().read_port_by_name("Jyllinge"))
+
+print(tmb_extended().read_positions_of_ships_headed_to_port("HANSTHOLM"))
