@@ -83,17 +83,5 @@ class ais_unit_tests(test.TestCase):
         program_output = mysqlutils.SQL_runner().run(query)
         self.assertEqual(true_output, str(program_output))
 
-    # Test for grabbing mySQL datafile location
-    def test_request_mysql_files(self):
-        output = mysqlutils.SQL_runner().run("SELECT @@GLOBAL.secure_file_priv;")
-        output = output[0]
-
-        # remove tuple
-        output = output[0]
-        print(output)
-
-        print(str(output))
-        self.assertEqual(str(output), "C:\\Users\\david\\MySQLData\\Uploads\\")
-
 if __name__ == '__main__':
     test.main()
