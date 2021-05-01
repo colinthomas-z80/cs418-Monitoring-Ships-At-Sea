@@ -48,6 +48,14 @@ class tmb_extended:
         rs = SQL_runner().run(query)
         return rs
 
+    # return a port with given name
+    def read_port_by_name(self, name):
+        query = "SELECT * FROM AISDraft.PORT WHERE Name = '{0}'".format(name)
+        rs = SQL_runner().run(query)
+        return rs
+
 #print(tmb_extended().read_position_by_mmsi(235095435)) 
 
-print(tmb_extended().read_last_5_positions(244089000))
+#print(tmb_extended().read_last_5_positions(244089000))
+
+print(tmb_extended().read_port_by_name("Jyllinge"))
