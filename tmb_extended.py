@@ -7,11 +7,10 @@ class tmb_extended:
 
     # given an mmsi, go through the most recent AIS_MESSAGEs until you find a position report. return the mmsi and position.
     def read_position_by_mmsi(self, mmsi):
-        query = "SELECT MMSI, Latitude, Longitude FROM AISDraft.POSITION_REPORT, AISDraft.AIS_MESSAGE \
+        query = "SELECT MMSI, Latitude, Longitude, max(Timestamp) FROM AISDraft.POSITION_REPORT, AISDraft.AIS_MESSAGE \
                   WHERE POSITION_REPORT.AISMessage_Id = AIS_MESSAGE.Id  \
                   AND AIS_MESSAGE.MMSI = {0} \
-                  ORDER BY Timestamp \
-                  LIMIT 1;".format(mmsi) 
+                  GROUP BY MMSI, Latitude, Longitude".format(mmsi) 
                   
         result = SQL_runner().run(query)
         return result
@@ -109,10 +108,25 @@ class tmb_extended:
         deleted = SQL_runner().run(query)  
         return deleted
 
+    # find position reports logged inside the tile id. discard if there is a newer document for that mmsi
+    def read_ship_positions_in_tile(self, id):
+        query = "SELECT DISTINCT MMSI FROM AISDraft.AIS_MESSAGE  \
+                 WHERE Id in (SELECT DISTINCT AISMessage_Id FROM AISDraft.POSITION_REPORT, AISDraft.AIS_MESSAGE  \
+                 WHERE MapView1_Id = '{0}' OR MapView2_Id = '{0}' OR MapView3_Id = '{0}' \
+                 AND AISMessage_Id = Id)".format(id)
 
-#print(tmb_extended().read_position_by_mmsi(311000929)) 
+        mmsi_set = SQL_runner().run(query)
+        vessels = []
+        for mmsi in mmsi_set:
+            vessels.append(self.read_vessel_information(mmsi[0]))
+        return vessels
+
+
+#print(tmb_extended().read_position_by_mmsi(244089000)) 
 
 #print(tmb_extended().read_last_5_positions(244089000))
+
+#print(tmb_extended().read_recent_vessel_positions())
 
 #print(tmb_extended().read_port_by_name("Jyllinge"))
 
@@ -120,4 +134,8 @@ class tmb_extended:
 
 #print(tmb_extended().read_positions_of_ships_headed_to_port_id(2974))
 
-print(tmb_extended().delete_ais_older_than_five_minutes("2021-11-18 00:00:03"))
+#print(tmb_extended().delete_ais_older_than_five_minutes("2021-11-18 00:00:03"))
+
+#print(tmb_dao.map_location(57.077635, 8.203543))
+
+#print(tmb_extended().read_ship_positions_in_tile(5237))
