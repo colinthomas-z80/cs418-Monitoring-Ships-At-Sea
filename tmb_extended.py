@@ -122,6 +122,7 @@ class tmb_extended:
         return vessels
 
 
+    # get the level 3 tile the port is in, and read the ship positions in that tile
     def read_ship_positions_by_port(self, port_name):
         tile = SQL_runner().run("SELECT PORT.MapView3_Id FROM AISDraft.PORT WHERE Name = '{0}'".format(port_name))
         if not tile[0]:
@@ -130,6 +131,19 @@ class tmb_extended:
         else:
             vessels = self.read_ship_positions_in_tile(tile[0][0])
             return vessels
+
+
+    # get the 4 child tiles of a given level 2 tile id
+    def read_level_3_tiles(self, id):
+        tiles = SQL_runner().run("SELECT Id FROM AISDraft.MAP_VIEW WHERE ContainerMapView_Id = {0}".format(id))
+        rs = []
+        for tile in tiles:  # get it out of a 2 dimensional array
+            rs.append(tile[0])
+        return rs
+    
+    def get_tile_file(self, id):
+        file = SQL_runner().run("SELECT RasterFile FROM AISDraft.MAP_VIEW WHERE Id = {0}".format(id))
+        return file[0][0]
 
 #print(tmb_extended().read_position_by_mmsi(244089000)) 
 
@@ -150,3 +164,7 @@ class tmb_extended:
 #print(tmb_extended().read_ship_positions_in_tile(53312))
 
 #print(tmb_extended().read_ship_positions_by_port("Munkebo"))
+
+#print(tmb_extended().read_level_3_tiles(5036))
+
+#print(tmb_extended().get_tile_file(5036))
