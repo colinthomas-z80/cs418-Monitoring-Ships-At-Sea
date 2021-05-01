@@ -108,7 +108,7 @@ class tmb_extended:
         deleted = SQL_runner().run(query)  
         return deleted
 
-    # find position reports logged inside the tile id. discard if there is a newer document for that mmsi
+    # find mmsis from position reports logged inside the tile id, then get the ship information for each mmsi
     def read_ship_positions_in_tile(self, id):
         query = "SELECT DISTINCT MMSI FROM AISDraft.AIS_MESSAGE  \
                  WHERE Id in (SELECT DISTINCT AISMessage_Id FROM AISDraft.POSITION_REPORT, AISDraft.AIS_MESSAGE  \
@@ -121,6 +121,15 @@ class tmb_extended:
             vessels.append(self.read_vessel_information(mmsi[0]))
         return vessels
 
+
+    def read_ship_positions_by_port(self, port_name):
+        tile = SQL_runner().run("SELECT PORT.MapView3_Id FROM AISDraft.PORT WHERE Name = '{0}'".format(port_name))
+        if not tile[0]:
+            ports = SQL_runner().run("SELECT * FROM AISDraft.PORT;")
+            return "ports"
+        else:
+            vessels = self.read_ship_positions_in_tile(tile[0][0])
+            return vessels
 
 #print(tmb_extended().read_position_by_mmsi(244089000)) 
 
@@ -138,4 +147,6 @@ class tmb_extended:
 
 #print(tmb_dao.map_location(57.077635, 8.203543))
 
-#print(tmb_extended().read_ship_positions_in_tile(5237))
+#print(tmb_extended().read_ship_positions_in_tile(53312))
+
+#print(tmb_extended().read_ship_positions_by_port("Munkebo"))
