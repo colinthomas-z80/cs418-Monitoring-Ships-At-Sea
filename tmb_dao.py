@@ -25,14 +25,18 @@ class tmb_dao:
 
         if msgtype == "position_report":
             position_obj, status, rot, sog, cog, heading = pos_extract(msg)
-            longitude = msg["Position"]["coordinates"][0]
-            latitude  = msg["Position"]["coordinates"][1]
-
+            
             id = random.randint(0,4294967290)
+            longitude = msg["Position"]["coordinates"][1]
+            latitude  = msg["Position"]["coordinates"][0]
+
+            # find out which map tiles contain these coordinates
+            mv1, mv2, mv3 = map_location(latitude, longitude)
+
             ais_query = "INSERT INTO AISDraft.AIS_MESSAGE VALUES ({0}, STR_TO_DATE('{1}','%Y-%m-%dT%H:%i:%s.000Z'), {2}, '{3}', {4});".format(
                     id, timestamp, mmsi, msgclass, "NULL")
             pos_query = "INSERT INTO AISDraft.POSITION_REPORT VALUES({0}, '{1}', {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11});".format( 
-                    id, status, longitude, latitude, rot, sog, cog, heading, "NULL", "NULL", "NULL", "NULL") 
+                    id, status, longitude, latitude, rot, sog, cog, heading, "NULL", mv1, mv2, mv3) 
 
             try:
                 SQL_runner().run(ais_query)
@@ -67,6 +71,18 @@ class tmb_dao:
         for msg in batch_as_json:
             self.insert_msg(msg, 1)            
 
+# find the 3 levels of map tile which contain the coordinate set, hopefully... 
+def map_location(latitude, longitude):
+    query = "SELECT Id FROM AISDraft.MAP_VIEW WHERE \
+             LongitudeW < {0} AND \
+             LongitudeE > {0} AND \
+             LatitudeS < {1} AND \
+             LatitudeN > {1};".format(longitude,latitude)
+
+    rs = SQL_runner().run(query)
+    if not rs:
+        return 1, "NULL", "NULL" # return null if there is no map view that contains the location. top level map view will always be 1
+    return 1, rs[1][0], rs[2][0]  
 
 def pre_extract(data):
     return data["Timestamp"], data["Class"], data["MMSI"], data["MsgType"]
@@ -103,35 +119,5 @@ def static_extract(data):
 
 #tmb_dao().insert_message_batch("sample_input.json")
 
-# Renet showed this code in class so if this helps in any way
-class Message:
-    def __init__(self, msg):
-
-        self.timestamp = msg['Timestamp'][:-1].replace('T', ' ')
-        self.mmsi = msg['MMSI']
-        self.equiptclass = msg['Class']
-
-    def to_shared_sql_values(self):
-        return "(NULL, '{}', {}, '{}', NULL)".format(self.timestamp, self.mmsi, self.equiptclass)
-
-
-class PositionReport:
-
-    def __init__(self, msg):
-
-        super().__init__(msg)
-
-        self.id = None
-        self.status = msg['Status']
-        self.longitude = msg['Position']['coordinates'][1]
-        self.latitude = msg['Position']['coordinates'][0]
-        self.rot = msg['RoT'] if 'RoT' in msg else 'NULL',      # these commas might be unintentional?
-        self.sog = msg['SoG'] if 'SoG' in msg else 'NULL',
-        self.cog = msg['CoG'] if 'CoG' in msg else 'NULL',
-        self.heading = msg['Heading'] if 'Heading' in msg else 'NULL'
-
-    def to_position_report_sql_values(self):
-
-        if not self.id:
-            return None
+#print(map_location(57.49587, 10.501518))
 
