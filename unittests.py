@@ -83,5 +83,48 @@ class ais_unit_tests(test.TestCase):
         program_output = mysqlutils.SQL_runner().run(query)
         self.assertEqual(true_output, str(program_output))
 
+    def test_read_position_by_mmsi(self):
+        tmb_dao.tmb_dao().read_position_by_mmsi(244089000)
+        expected = "[(244089000, Decimal('57.077635'), Decimal('8.203543'), datetime.datetime(2020, 11, 18, 0, 0, 2))]"
+        query = "SELECT MMSI, Latitude, Longitude, max(Timestamp) FROM AISDraft.POSITION_REPORT, AISDraft.AIS_MESSAGE WHERE POSITION_REPORT.AISMessage_Id = AIS_MESSAGE.Id AND AIS_MESSAGE.MMSI = 244089000 GROUP BY MMSI, Latitude, Longitude;"
+        actual = mysqlutils.SQL_runner().run(query)
+        self.assertEqual(expected, str(actual))
+
+
+    def test_read_last_5_positions(self):
+        tmb_dao.tmb_dao().read_last_5_positions(244089000)
+        expected = "[(244089000, Decimal('57.077635'), Decimal('8.203543')), (244089000, Decimal('57.077635'), Decimal('8.203543'))]"
+        query = "SELECT MMSI, Latitude, Longitude FROM AISDraft.POSITION_REPORT, AISDraft.AIS_MESSAGE WHERE POSITION_REPORT.AISMessage_Id = AIS_MESSAGE.Id AND AIS_MESSAGE.MMSI = 244089000 ORDER BY Timestamp LIMIT 5;"
+        actual = mysqlutils.SQL_runner().run(query)
+        self.assertEqual(expected, str(actual))
+
+    # def test_read_recent_vessel_positions(self):
+    #     tmb_dao.tmb_dao().read_recent_vessel_positions()
+    #     expected = ""
+    #     query = "SELECT DISTINCT MMSI FROM AISDraft.POSITION_REPORT, AISDraft.AIS_MESSAGE WHERE POSITION_REPORT.AISMessage_Id = AIS_MESSAGE.Id GROUP BY MMSI;"
+    #     actual = mysqlutils.SQL_runner().run(query)
+    #     self.assertEqual(expected, str(actual))
+
+    def test_read_vessel_information(self):
+        tmb_dao.tmb_dao().read_vessel_information(244089000)
+        expected = "[(9229063, 'Netherlands', 'Thun Galaxy', 2001, None, 114, 15, 4107, 244089000, 'Chemical/Oil Tanker', 'Active', '17821')]"
+        query = "SELECT * FROM AISDraft.VESSEL WHERE MMSI = 244089000"
+        actual = mysqlutils.SQL_runner().run(query)
+        self.assertEqual(expected, str(actual))
+
+    def test_read_port_by_name(self):
+        tmb_dao.tmb_dao().read_port_by_name("Jyllinge")
+        expected = "[(5016, 'NULL', 'Jyllinge', 'Denmark', Decimal('12.096111'), Decimal('55.745000'), 'www.jyllingehavn.dk', 1, 5528, 55283)]"
+        query = "SELECT * FROM AISDraft.PORT WHERE Name = 'Jyllinge'"
+        actual = mysqlutils.SQL_runner().run(query)
+        self.assertEqual(expected, str(actual))
+
+    def test_get_tile_file(self):
+        tmb_dao.tmb_dao().get_tile_file(5036)
+        expected = "[('38F7.png',)]"
+        query = "SELECT RasterFile FROM AISDraft.MAP_VIEW WHERE Id = 5036"
+        actual = mysqlutils.SQL_runner().run(query)
+        self.assertEqual(expected, str(actual))
+
 if __name__ == '__main__':
     test.main()
