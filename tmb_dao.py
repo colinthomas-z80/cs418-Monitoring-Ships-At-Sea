@@ -4,9 +4,9 @@ import mysql.connector
 import random
 from mysql.connector import errorcode
 from mysqlutils import SQL_runner
+import configparser
 
 class tmb_dao:
-
     # takes individual ais message as a string or json object
     def insert_msg(self, ais_json, is_json):
 
@@ -74,6 +74,7 @@ class tmb_dao:
         return result
 
     def read_last_5_positions(self, mmsi):
+
         query = "SELECT MMSI, Latitude, Longitude FROM AISDraft.POSITION_REPORT, AISDraft.AIS_MESSAGE \
                   WHERE POSITION_REPORT.AISMessage_Id = AIS_MESSAGE.Id  \
                   AND AIS_MESSAGE.MMSI = {0} \
@@ -257,9 +258,11 @@ def static_extract(data):
 
 #print(map_location(57.49587, 10.501518))
 
-#print(tmb_dao().read_position_by_mmsi(244089000)) 
+#print(tmb_dao().read_position_by_mmsi(244089000))
 
 #print(tmb_dao().read_last_5_positions(244089000))
+
+#print(tmb_dao().read_vessel_information(244089000))
 
 #print(tmb_dao().read_recent_vessel_positions())
 
@@ -277,5 +280,5 @@ def static_extract(data):
 
 #print(tmb_dao().read_level_3_tiles(5036))
 
-#print(tmb_dao().get_tile_file(5036))
+print(tmb_dao().get_tile_file(5036))
 
