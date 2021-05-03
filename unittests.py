@@ -82,12 +82,12 @@ class ais_unit_tests(test.TestCase):
         self.assertEqual(expected, actual)
 
     def test_read_ship_positions_in_tile(self):
-        expected = "[[(9608673, 'Marshall Islands', 'Ionic Hawk', 2012, None, 180, 30, 22432, 538004542, 'Bulk Carrier', 'Active', '20820')], []]"
+        expected = "[[(9608673, 'Marshall Islands', 'Ionic Hawk', 2012, None, 180, 30, 22432, 538004542, 'Bulk Carrier', 'Active', '20820')]]"
         actual = str(tmb_dao.tmb_dao().read_ship_positions_in_tile(53312))
         self.assertEqual(expected, actual)
 
     def test_read_ship_positions_by_port(self):
-        expected = "[[(9608673, 'Marshall Islands', 'Ionic Hawk', 2012, None, 180, 30, 22432, 538004542, 'Bulk Carrier', 'Active', '20820')], []]"
+        expected = "[[(9608673, 'Marshall Islands', 'Ionic Hawk', 2012, None, 180, 30, 22432, 538004542, 'Bulk Carrier', 'Active', '20820')]]"
         actual = str(tmb_dao.tmb_dao().read_ship_positions_by_port("Munkebo"))
         self.assertEqual(expected, actual)
 

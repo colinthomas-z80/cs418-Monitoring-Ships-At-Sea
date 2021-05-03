@@ -173,11 +173,15 @@ class tmb_dao:
         query = "SELECT DISTINCT MMSI FROM AISDraft.AIS_MESSAGE  \
                  WHERE Id in (SELECT DISTINCT AISMessage_Id FROM AISDraft.POSITION_REPORT, AISDraft.AIS_MESSAGE  \
                  WHERE MapView1_Id = '{0}' OR MapView2_Id = '{0}' OR MapView3_Id = '{0}' \
-                 AND AISMessage_Id = Id)".format(id)
+                 AND AISMessage_Id = Id \
+                 ORDER BY MMSI ASC)".format(id)
 
         mmsi_set = SQL_runner().run(query)
         vessels = []
         for mmsi in mmsi_set:
+            info = self.read_vessel_information(mmsi[0])
+            if not info:
+                continue
             vessels.append(self.read_vessel_information(mmsi[0]))
         return vessels
 
@@ -281,5 +285,5 @@ def static_extract(data):
 
 #print(tmb_dao().read_level_3_tiles(5036))
 
-print(tmb_dao().get_tile_file(5036))
+#print(tmb_dao().get_tile_file(5036))
 
