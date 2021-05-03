@@ -27,36 +27,6 @@ class ais_unit_tests(test.TestCase):
 
     # Unit Tests for tmb_dao.py
 
-    # Test for insert.msg()
-    def test_insert_message_fail(self):
-        error = False
-        ex = '{"Timstamp":"2020-11-18T00:00:00.000Z","Class":"Class A","MMSI":244265000,"MsgType":"position_report", \
-                     "Position":{"type":"Point","coordinates":[55.522592,15.068637]},"Status":"Under way using engine","RoT":2.2,"SoG":14.8,"CoG":62,"Heading":61}'
-        try:
-            tmb_dao.tmb_dao().insert_msg(ex, 0)
-        except KeyError:
-            error = True
-        self.assertTrue(error)
-
-    # Test successful insert for insert_msg()
-    def test_insert_message(self):
-        ex = '{"Timestamp":"2020-11-18T00:00:00.000Z","Class":"Class A","MMSI":244265000,"MsgType":"position_report", \
-                             "Position":{"type":"Point","coordinates":[55.522592,15.068637]},"Status":"Under way using engine","RoT":2.2,"SoG":14.8,"CoG":62,"Heading":61}'
-        tmb_dao.tmb_dao().insert_msg(ex, 0)
-        expected = "[(datetime.datetime(2020, 11, 18, 0, 0), 'Under way using engine')]"
-        query = "SELECT AISDraft.ais_message.Timestamp, AISDraft.position_report.Navigationalstatus FROM AISDraft.ais_message, AISDraft.position_report WHERE AISDraft.ais_message.MMSI=244265000 AND AISDraft.ais_message.Id=AISDraft.position_report.AISMessage_Id;"
-        actual = mysqlutils.SQL_runner().run(query)
-        self.assertEqual(expected, str(actual))
-
-    # Test for insert_message_batch()
-    # Test successful insert for insert_message_batch()
-    def test_insert_message_batch(self):
-        tmb_dao.tmb_dao().insert_message_batch("sample_input.json")
-        true_output = "[(datetime.datetime(2020, 11, 18, 0, 0), 'Under way using engine')]"
-        query = "SELECT AISDraft.ais_message.timestamp, AISDraft.position_report.navigationalstatus FROM AISDraft.ais_message, AISDraft.position_report WHERE AISDraft.ais_message.mmsi=304858000 AND AISDraft.ais_message.id=AISDraft.position_report.aismessage_id;"
-        program_output = mysqlutils.SQL_runner().run(query)
-        self.assertEqual(true_output, str(program_output))
-
     def test_read_position_by_mmsi(self):
         tmb_dao.tmb_dao().read_position_by_mmsi(244089000)
         expected = "[(244089000, Decimal('57.077635'), Decimal('8.203543'), datetime.datetime(2020, 11, 18, 0, 0, 2))]"
@@ -66,8 +36,9 @@ class ais_unit_tests(test.TestCase):
 
 
     def test_read_last_5_positions(self):
-        tmb_dao.tmb_dao().read_last_5_positions(244089000)
-        expected = "[(244089000, Decimal('57.077635'), Decimal('8.203543')), (244089000, Decimal('57.077635'), Decimal('8.203543'))]"
+        print(tmb_dao.tmb_dao().read_last_5_positions(244089000))
+        #expected = "[[], (244089000, Decimal('57.077635'), Decimal('8.203543')), (244089000, Decimal('57.077635'), Decimal('8.203543'))]"
+        expected = "[(244089000, Decimal('57.077635'), Decimal('8.203543'))]"
         query = "SELECT MMSI, Latitude, Longitude FROM AISDraft.POSITION_REPORT, AISDraft.AIS_MESSAGE WHERE POSITION_REPORT.AISMessage_Id = AIS_MESSAGE.Id AND AIS_MESSAGE.MMSI = 244089000 ORDER BY Timestamp LIMIT 5;"
         actual = mysqlutils.SQL_runner().run(query)
         self.assertEqual(expected, str(actual))
@@ -110,17 +81,13 @@ class ais_unit_tests(test.TestCase):
         actual = str(tmb_dao.tmb_dao().read_positions_of_ships_headed_to_port_id(2974))
         self.assertEqual(expected, actual)
 
-    def test_delete_ais_older_than_five_minutes(self):
-        print(tmb_dao.tmb_dao().delete_ais_older_than_five_minutes("2021-11-18 00:00:03"))
-        self.assertTrue(True)
-
     def test_read_ship_positions_in_tile(self):
-        expected = "[[], [(9608673, 'Marshall Islands', 'Ionic Hawk', 2012, None, 180, 30, 22432, 538004542, 'Bulk Carrier', 'Active', '20820')]]"
+        expected = "[[(9608673, 'Marshall Islands', 'Ionic Hawk', 2012, None, 180, 30, 22432, 538004542, 'Bulk Carrier', 'Active', '20820')], []]"
         actual = str(tmb_dao.tmb_dao().read_ship_positions_in_tile(53312))
         self.assertEqual(expected, actual)
 
     def test_read_ship_positions_by_port(self):
-        expected = "[[], [(9608673, 'Marshall Islands', 'Ionic Hawk', 2012, None, 180, 30, 22432, 538004542, 'Bulk Carrier', 'Active', '20820')]]"
+        expected = "[[(9608673, 'Marshall Islands', 'Ionic Hawk', 2012, None, 180, 30, 22432, 538004542, 'Bulk Carrier', 'Active', '20820')], []]"
         actual = str(tmb_dao.tmb_dao().read_ship_positions_by_port("Munkebo"))
         self.assertEqual(expected, actual)
 
@@ -128,6 +95,42 @@ class ais_unit_tests(test.TestCase):
         expected = "[50361, 50362, 50363, 50364]"
         actual = str(tmb_dao.tmb_dao().read_level_3_tiles(5036))
         self.assertEqual(expected, actual)
+
+    def test_zz_delete_ais_older_than_five_minutes(self):
+        expected = "[(500,)]"
+        actual = str(tmb_dao.tmb_dao().delete_ais_older_than_five_minutes("2020-11-18 00:09:00"))
+        self.assertEqual(expected, actual)
+
+
+    # Test for insert.msg()
+    def test_insert_message_fail(self):
+        error = False
+        ex = '{"Timstamp":"2020-11-18T00:00:00.000Z","Class":"Class A","MMSI":244265000,"MsgType":"position_report", \
+                     "Position":{"type":"Point","coordinates":[55.522592,15.068637]},"Status":"Under way using engine","RoT":2.2,"SoG":14.8,"CoG":62,"Heading":61}'
+        try:
+            tmb_dao.tmb_dao().insert_msg(ex, 0)
+        except KeyError:
+            error = True
+        self.assertTrue(error)
+
+    # Test successful insert for insert_msg()
+    def test_zz_insert_message(self):
+        ex = '{"Timestamp":"2020-11-18T00:00:00.000Z","Class":"Class A","MMSI":244265000,"MsgType":"position_report", \
+                             "Position":{"type":"Point","coordinates":[55.522592,15.068637]},"Status":"Under way using engine","RoT":2.2,"SoG":14.8,"CoG":62,"Heading":61}'
+        tmb_dao.tmb_dao().insert_msg(ex, 0)
+        expected = "[(datetime.datetime(2020, 11, 18, 0, 0), 'Under way using engine')]"
+        query = "SELECT AISDraft.ais_message.Timestamp, AISDraft.position_report.Navigationalstatus FROM AISDraft.ais_message, AISDraft.position_report WHERE AISDraft.ais_message.MMSI=244265000 AND AISDraft.ais_message.Id=AISDraft.position_report.AISMessage_Id;"
+        actual = mysqlutils.SQL_runner().run(query)
+        self.assertEqual(expected, str(actual))
+
+    # Test for insert_message_batch()
+    # Test successful insert for insert_message_batch()
+    def test_insert_message_batch(self):
+        tmb_dao.tmb_dao().insert_message_batch("sample_input.json")
+        true_output = "[(datetime.datetime(2020, 11, 18, 0, 0), 'Under way using engine')]"
+        query = "SELECT AISDraft.ais_message.timestamp, AISDraft.position_report.navigationalstatus FROM AISDraft.ais_message, AISDraft.position_report WHERE AISDraft.ais_message.mmsi=304858000 AND AISDraft.ais_message.id=AISDraft.position_report.aismessage_id;"
+        program_output = mysqlutils.SQL_runner().run(query)
+        self.assertEqual(true_output, str(program_output))
 
 if __name__ == '__main__':
     test.main()

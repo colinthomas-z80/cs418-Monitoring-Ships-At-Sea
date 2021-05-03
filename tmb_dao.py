@@ -59,6 +59,7 @@ class tmb_dao:
     def insert_message_batch(self, batch_ais_json):
         f = open(batch_ais_json)
         batch_as_json = json.loads(f.read())
+        f.close()
 
         for msg in batch_as_json:
             self.insert_msg(msg, 1)       
@@ -186,7 +187,7 @@ class tmb_dao:
         tile = SQL_runner().run("SELECT PORT.MapView3_Id FROM AISDraft.PORT WHERE Name = '{0}'".format(port_name))
         if not tile[0]:
             ports = SQL_runner().run("SELECT * FROM AISDraft.PORT;")
-            return "ports"
+            return ports
         else:
             vessels = self.read_ship_positions_in_tile(tile[0][0])
             return vessels
