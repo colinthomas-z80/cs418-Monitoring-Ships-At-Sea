@@ -15,37 +15,19 @@ class ais_unit_tests(test.TestCase):
         self.assertFalse(False, "Pass")
 
     # Unit Tests for create_database.py
-    def test_create_database_pass(self):
+    def test_create_database(self):
         create_database
         error = False
         try:
             mysqlutils.SQL_runner().run("USE AISDraft")
+            mysqlutils.SQL_runner().run("DESCRIBE AISDraft.vessel")
         except Exception:
             error = True
         self.assertFalse(error)
-
-    def test_create_database_fail(self):
-        create_database
-        error = False
-        try:
-            mysqlutils.SQL_runner().run("USE AISDraft")
-        except Exception:
-            error = True
-        self.assertTrue(error)
 
     # Unit Tests for tmb_dao.py
 
     # Test for insert.msg()
-    def test_insert_message_pass(self):
-        error = False
-        ex = '{"Timestamp":"2020-11-18T00:00:00.000Z","Class":"Class A","MMSI":244265000,"MsgType":"position_report", \
-             "Position":{"type":"Point","coordinates":[55.522592,15.068637]},"Status":"Under way using engine","RoT":2.2,"SoG":14.8,"CoG":62,"Heading":61}'
-        try:
-            tmb_dao.tmb_dao().insert_msg(ex, 0)
-        except Error:
-            error = True
-        self.assertFalse(error)
-
     def test_insert_message_fail(self):
         error = False
         ex = '{"Timstamp":"2020-11-18T00:00:00.000Z","Class":"Class A","MMSI":244265000,"MsgType":"position_report", \
@@ -67,14 +49,6 @@ class ais_unit_tests(test.TestCase):
         self.assertEqual(expected, str(actual))
 
     # Test for insert_message_batch()
-    def test_insert_message_batch_pass(self):
-        error = False
-        try:
-            tmb_dao.tmb_dao().insert_message_batch("sample_input.json")
-        except Exception:
-            error = True
-        self.assertFalse(error)
-
     # Test successful insert for insert_message_batch()
     def test_insert_message_batch(self):
         tmb_dao.tmb_dao().insert_message_batch("sample_input.json")
@@ -125,6 +99,35 @@ class ais_unit_tests(test.TestCase):
         query = "SELECT RasterFile FROM AISDraft.MAP_VIEW WHERE Id = 5036"
         actual = mysqlutils.SQL_runner().run(query)
         self.assertEqual(expected, str(actual))
+
+    def test_read_position_of_ships_headed_to_port(self):
+        expected = """[[(219023635, Decimal('57.720800'), Decimal('10.594683'), datetime.datetime(2020, 11, 18, 0, 0, 2))]]"""
+        actual = tmb_dao.tmb_dao().read_positions_of_ships_headed_to_port("HANSTHOLM")
+        self.assertEqual(expected, str(actual))
+
+    def test_read_position_of_ships_headed_to_port_id(self):
+        expected = "[[(219023635, Decimal('57.720800'), Decimal('10.594683'), datetime.datetime(2020, 11, 18, 0, 0, 2))]]"
+        actual = str(tmb_dao.tmb_dao().read_positions_of_ships_headed_to_port_id(2974))
+        self.assertEqual(expected, actual)
+
+    def test_delete_ais_older_than_five_minutes(self):
+        print(tmb_dao.tmb_dao().delete_ais_older_than_five_minutes("2021-11-18 00:00:03"))
+        self.assertTrue(True)
+
+    def test_read_ship_positions_in_tile(self):
+        expected = "[[], [(9608673, 'Marshall Islands', 'Ionic Hawk', 2012, None, 180, 30, 22432, 538004542, 'Bulk Carrier', 'Active', '20820')]]"
+        actual = str(tmb_dao.tmb_dao().read_ship_positions_in_tile(53312))
+        self.assertEqual(expected, actual)
+
+    def test_read_ship_positions_by_port(self):
+        expected = "[[], [(9608673, 'Marshall Islands', 'Ionic Hawk', 2012, None, 180, 30, 22432, 538004542, 'Bulk Carrier', 'Active', '20820')]]"
+        actual = str(tmb_dao.tmb_dao().read_ship_positions_by_port("Munkebo"))
+        self.assertEqual(expected, actual)
+
+    def test_read_level_3_tiles(self):
+        expected = "[50361, 50362, 50363, 50364]"
+        actual = str(tmb_dao.tmb_dao().read_level_3_tiles(5036))
+        self.assertEqual(expected, actual)
 
 if __name__ == '__main__':
     test.main()
