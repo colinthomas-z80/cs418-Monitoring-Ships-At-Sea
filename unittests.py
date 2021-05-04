@@ -4,7 +4,6 @@ import mysqlutils
 import tmb_dao
 
 class ais_unit_tests(test.TestCase):
-
     # Tests unit tester
     def test_if_true(self):
         self.assertTrue(True, "Pass")
@@ -24,18 +23,13 @@ class ais_unit_tests(test.TestCase):
         self.assertFalse(error)
 
     # Unit Tests for tmb_dao.py
-
     def test_read_position_by_mmsi(self):
         expected = "[(244089000, Decimal('57.077635'), Decimal('8.203543'), datetime.datetime(2020, 11, 18, 0, 0, 2))]"
-        # query = "SELECT MMSI, Latitude, Longitude, max(Timestamp) FROM AISDraft.POSITION_REPORT, AISDraft.AIS_MESSAGE WHERE POSITION_REPORT.AISMessage_Id = AIS_MESSAGE.Id AND AIS_MESSAGE.MMSI = 244089000 GROUP BY MMSI, Latitude, Longitude;"
         actual = tmb_dao.tmb_dao().read_position_by_mmsi(244089000)
         self.assertEqual(expected, str(actual))
 
     def test_read_last_5_positions(self):
-        # tmb_dao.tmb_dao().read_last_5_positions(244089000)
-        #expected = "[[], (244089000, Decimal('57.077635'), Decimal('8.203543')), (244089000, Decimal('57.077635'), Decimal('8.203543'))]"
         expected = "[(244089000, Decimal('57.077635'), Decimal('8.203543'))]"
-        query = "SELECT MMSI, Latitude, Longitude FROM AISDraft.POSITION_REPORT, AISDraft.AIS_MESSAGE WHERE POSITION_REPORT.AISMessage_Id = AIS_MESSAGE.Id AND AIS_MESSAGE.MMSI = 244089000 ORDER BY Timestamp LIMIT 5;"
         actual = tmb_dao.tmb_dao().read_last_5_positions(244089000)
         self.assertEqual(expected, str(actual))
 
