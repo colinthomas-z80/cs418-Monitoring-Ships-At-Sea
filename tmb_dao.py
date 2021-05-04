@@ -59,6 +59,7 @@ class tmb_dao:
     def insert_message_batch(self, batch_ais_json):
         f = open(batch_ais_json)
         batch_as_json = json.loads(f.read())
+        f.close()
 
         for msg in batch_as_json:
             self.insert_msg(msg, 1)       
@@ -172,25 +173,27 @@ class tmb_dao:
         query = "SELECT DISTINCT MMSI FROM AISDraft.AIS_MESSAGE  \
                  WHERE Id in (SELECT DISTINCT AISMessage_Id FROM AISDraft.POSITION_REPORT, AISDraft.AIS_MESSAGE  \
                  WHERE MapView1_Id = '{0}' OR MapView2_Id = '{0}' OR MapView3_Id = '{0}' \
-                 AND AISMessage_Id = Id)".format(id)
+                 AND AISMessage_Id = Id \
+                 ORDER BY MMSI ASC)".format(id)
 
         mmsi_set = SQL_runner().run(query)
         vessels = []
         for mmsi in mmsi_set:
+            info = self.read_vessel_information(mmsi[0])
+            if not info:
+                continue
             vessels.append(self.read_vessel_information(mmsi[0]))
         return vessels
-
 
     # get the level 3 tile the port is in, and read the ship positions in that tile
     def read_ship_positions_by_port(self, port_name):
         tile = SQL_runner().run("SELECT PORT.MapView3_Id FROM AISDraft.PORT WHERE Name = '{0}'".format(port_name))
         if not tile[0]:
             ports = SQL_runner().run("SELECT * FROM AISDraft.PORT;")
-            return "ports"
+            return ports
         else:
             vessels = self.read_ship_positions_in_tile(tile[0][0])
             return vessels
-
 
     # get the 4 child tiles of a given level 2 tile id
     def read_level_3_tiles(self, id):
@@ -216,10 +219,6 @@ def map_location(latitude, longitude):
     if len(rs) <= 1:
         return 1, "NULL", "NULL" # return null if there is no map view that contains the location. top level map view will always be 1
     return 1, rs[1][0], rs[2][0]  
-
-
-
-
 
 def pre_extract(data):
     return data["Timestamp"], data["Class"], data["MMSI"], data["MsgType"]
@@ -280,5 +279,5 @@ def static_extract(data):
 
 #print(tmb_dao().read_level_3_tiles(5036))
 
-print(tmb_dao().get_tile_file(5036))
+#print(tmb_dao().get_tile_file(5036))
 
