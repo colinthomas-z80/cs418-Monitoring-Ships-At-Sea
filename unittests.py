@@ -121,13 +121,14 @@ class ais_unit_tests(test.TestCase):
 
     # Test successful insert for insert_msg()
     def test_z_insert_message(self):
-        ex = '{"Timestamp":"2020-11-18T00:00:00.000Z","Class":"Class A","MMSI":244265000,"MsgType":"POSITION_REPORT", \
-                             "Position":{"type":"Point","coordinates":[55.522592,15.068637]},"Status":"Under way using engine","RoT":2.2,"SoG":14.8,"CoG":62,"Heading":61}'
+        ex = '{"Timestamp":"2020-11-18T00:00:00.000Z","Class":"Class A","MMSI":244265000,"MsgType":"position_report",' \
+             '"Position":{"type":"Point","coordinates":[55.522592,15.068637]},"Status":"Under way using engine",' \
+             '"RoT":2.2,"SoG":14.8,"CoG":62,"Heading":61}'
         tmb_dao.tmb_dao().insert_msg(ex, 0)
         expected = "[(datetime.datetime(2020, 11, 18, 0, 0), 'Under way using engine')]"
         query = "SELECT AISDraft.AIS_MESSAGE.Timestamp, AISDraft.POSITION_REPORT.NavigationalStatus FROM " \
                 "AISDraft.AIS_MESSAGE, AISDraft.POSITION_REPORT WHERE AISDraft.AIS_MESSAGE.MMSI=244265000 AND " \
-                "AISDraft.AIS_MESSAGE.Id=AISDraft.POSITION_REPORT.AISMessage_Id; "
+                "AISDraft.AIS_MESSAGE.Id=AISDraft.POSITION_REPORT.AISMessage_Id"
         actual = mysqlutils.SQL_runner().run(query)
         self.assertEqual(expected, str(actual))
 
