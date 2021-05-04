@@ -185,7 +185,6 @@ class tmb_dao:
             vessels.append(self.read_vessel_information(mmsi[0]))
         return vessels
 
-
     # get the level 3 tile the port is in, and read the ship positions in that tile
     def read_ship_positions_by_port(self, port_name):
         tile = SQL_runner().run("SELECT PORT.MapView3_Id FROM AISDraft.PORT WHERE Name = '{0}'".format(port_name))
@@ -195,7 +194,6 @@ class tmb_dao:
         else:
             vessels = self.read_ship_positions_in_tile(tile[0][0])
             return vessels
-
 
     # get the 4 child tiles of a given level 2 tile id
     def read_level_3_tiles(self, id):
@@ -221,10 +219,6 @@ def map_location(latitude, longitude):
     if len(rs) <= 1:
         return 1, "NULL", "NULL" # return null if there is no map view that contains the location. top level map view will always be 1
     return 1, rs[1][0], rs[2][0]  
-
-
-
-
 
 def pre_extract(data):
     return data["Timestamp"], data["Class"], data["MMSI"], data["MsgType"]
